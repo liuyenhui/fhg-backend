@@ -118,7 +118,7 @@ jobs:
             exit 0
           fi
           echo "Dispatching chart packaging for tag ${IMAGE_TAG}"
-          payload=$(cat <<'EOF'
+          payload=$(cat <<EOF
           {"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
           EOF
           )
