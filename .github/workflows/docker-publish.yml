@@ -1,4 +1,4 @@
-name: Publish Backend Image
+name: Publish Backend Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Optional semantic version (vMAJOR.MINOR.PATCH) for manual releases'
+        description: 'Optional semantic version (prefixed with v) for manual release'
         required: false
 
 permissions:
@@ -35,11 +35,15 @@ jobs:
       - name: Run Go tests
         run: go test ./...
 
+      - name: Build backend
+        run: go build ./cmd/server
+
       - name: Determine release version
         id: version
         shell: bash
         run: |
           set -euo pipefail
+
           manual_version="${{ github.event.inputs.version || '' }}"
           if [[ -n "$manual_version" ]]; then
             if [[ ! "$manual_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -71,7 +75,8 @@ jobs:
               fi
             fi
           fi
-          echo "Using version $version"
+
+          echo "Determined release version: $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
@@ -94,9 +99,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          version=${{ steps.version.outputs.version }}
+          version="${{ steps.version.outputs.version }}"
           if git rev-parse "$version" >/dev/null 2>&1; then
-            echo "Tag $version already exists, skipping tag creation."
+            echo "Tag $version already exists, skipping creation."
           else
             git tag "$version"
           fi
