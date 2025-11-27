@@ -20,6 +20,8 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN || '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -109,9 +111,8 @@ jobs:
           git push origin "$version"
 
       - name: Trigger fhg-charts packaging
-        if: secrets.CHARTS_REPO_TOKEN != ''
+        if: env.CHARTS_TOKEN != ''
         env:
-          CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
           IMAGE_TAG: ${{ steps.version.outputs.version }}
         run: |
           payload=$(cat <<'EOF'
