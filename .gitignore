@@ -1,11 +1,6 @@
-# Ignore common build artifacts and temporary files
+### Go build outputs
+cmd/server/server
+server
 
-# Compiled binaries
-/server
-*.exe
-*.dll
-*.so
-*.dylib
-
-# OS-specific
+### General ignores
 .DS_Store
