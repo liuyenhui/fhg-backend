@@ -110,22 +110,26 @@ jobs:
 
       - name: Trigger fhg-charts packaging
         run: |
+          set -euo pipefail
           CHARTS_TOKEN="${{ secrets.CHARTS_REPO_TOKEN }}"
           IMAGE_TAG="${{ steps.version.outputs.version }}"
           if [[ -z "${CHARTS_TOKEN:-}" ]]; then
             echo "CHARTS_REPO_TOKEN missing; skipping chart dispatch."
             exit 0
           fi
+          echo "Dispatching chart packaging for tag ${IMAGE_TAG}"
           payload=$(cat <<'EOF'
           {"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
           EOF
           )
+          echo "::notice ::Payload: ${payload}"
           status=$(curl -s -o /tmp/dispatch.out -w "%{http_code}" -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token ${CHARTS_TOKEN}" \
             -H "Content-Type: application/json" \
             https://api.github.com/repos/liuyenhui/fhg-charts/dispatches \
             -d "$payload")
+          echo "::notice ::Dispatch HTTP ${status}"
           if [[ "$status" -ge 300 ]]; then
             cat /tmp/dispatch.out
             echo "Dispatch to fhg-charts failed with HTTP ${status}"
