@@ -109,11 +109,14 @@ jobs:
           git push origin "$version"
 
       - name: Trigger fhg-charts packaging
-        if: ${{ secrets.CHARTS_REPO_TOKEN != '' }}
         env:
           CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
           IMAGE_TAG: ${{ steps.version.outputs.version }}
         run: |
+          if [[ -z "${CHARTS_TOKEN:-}" ]]; then
+            echo "CHARTS_REPO_TOKEN missing; skipping chart dispatch."
+            exit 0
+          fi
           payload=$(cat <<'EOF'
           {"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
           EOF
