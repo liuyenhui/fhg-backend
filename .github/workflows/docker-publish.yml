@@ -110,7 +110,6 @@ jobs:
 
       - name: Trigger fhg-charts packaging
       # 去除 Context access might be invalid: CHARTS_REPO_TOKEN
-      
         run: |
           set -euo pipefail
           CHARTS_TOKEN="${{ secrets.CHARTS_REPO_TOKEN }}"
