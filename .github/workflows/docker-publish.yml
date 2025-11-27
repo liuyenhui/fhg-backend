@@ -20,8 +20,9 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
+    
+    # env:
+    #   CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -115,7 +116,8 @@ jobs:
           git push origin "$version"
 
       - name: Trigger fhg-charts packaging
-      # 去除 Context access might be invalid: CHARTS_REPO_TOKEN
+        env:
+          CHARTS_TOKEN: ${{ secrets['CHARTS_REPO_TOKEN'] }}
         run: |
           set -euo pipefail
           IMAGE_TAG="${{ steps.version.outputs.version }}"
