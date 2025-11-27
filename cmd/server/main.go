@@ -8,7 +8,7 @@ import (
 
 func main() {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "fhg-backend up and running")
+        fmt.Fprintln(w, "fhg-backend up and running version from v0.0.1 to v0.0.2")
     }
 
     mux := http.NewServeMux()
