@@ -1,0 +1,11 @@
+# Ignore common build artifacts and temporary files
+
+# Compiled binaries
+/server
+*.exe
+*.dll
+*.so
+*.dylib
+
+# OS-specific
+.DS_Store

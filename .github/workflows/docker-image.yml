@@ -1,0 +1,95 @@
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional override for the version tag (format `major.minor`).'
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version tag
+        id: determine-version
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            latest_tag=$(git tag --list 'v*.*' --sort=-v:refname | head -n1 || true)
+            if [[ -z "$latest_tag" ]]; then
+              major=1
+              minor=0
+            else
+              version_without_prefix="${latest_tag#v}"
+              major="${version_without_prefix%%.*}"
+              minor="${version_without_prefix#*.}"
+              major=$((10#$major))
+              minor=$((10#$minor))
+              if (( minor >= 99 )); then
+                major=$((major + 1))
+                minor=0
+              else
+                minor=$((minor + 1))
+              fi
+            fi
+            version="${major}.${minor}"
+          fi
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format: $version. Expected major.minor"
+            exit 1
+          fi
+
+          image_tag="v${version}"
+          image_major=${version%%.*}
+          image_minor=${version#*.}
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image-tag=$image_tag" >> "$GITHUB_OUTPUT"
+          echo "image-major=$image_major" >> "$GITHUB_OUTPUT"
+          echo "image-minor=$image_minor" >> "$GITHUB_OUTPUT"
+          echo "Using version $image_tag"
+
+      - name: Configure git for tagging
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create git tag
+        run: |
+          git tag "${{ steps.determine-version.outputs.image-tag }}"
+          git push origin "${{ steps.determine-version.outputs.image-tag }}"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fhg-backend:${{ steps.determine-version.outputs.image-tag }}
+            ghcr.io/${{ github.repository_owner }}/fhg-backend:latest
