@@ -115,9 +115,9 @@ jobs:
           IMAGE_TAG: ${{ steps.version.outputs.version }}
         run: |
           payload=$(cat <<'EOF'
-{"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
-EOF
-)
+          {"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
+          EOF
+          )
           status=$(curl -s -o /tmp/dispatch.out -w "%{http_code}" -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token ${CHARTS_TOKEN}" \
