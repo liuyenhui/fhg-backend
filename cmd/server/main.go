@@ -1,20 +1,20 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"fmt"
+	"log"
+	"net/http"
 )
 
 func main() {
-    handler := func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "fhg-backend up and running version from v0.0.1 to v0.0.15")
-    }
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "fhg-backend update and running version chart update v0.1.9+ ")
+	}
 
-    mux := http.NewServeMux()
-    mux.HandleFunc("/", handler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler)
 
-    addr := ":8080"
-    log.Printf("starting fhg-backend on %s", addr)
-    log.Fatal(http.ListenAndServe(addr, mux))
+	addr := ":8080"
+	log.Printf("starting fhg-backend on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, mux))
 }
