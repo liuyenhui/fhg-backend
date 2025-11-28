@@ -20,9 +20,9 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    
-    # env:
-    #   CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fhg-backend
+      CHARTS_TOKEN: ${{ secrets.CHARTS_REPO_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -116,19 +116,47 @@ jobs:
           git push origin "$version"
 
       - name: Trigger fhg-charts packaging
-        env:
-          CHARTS_TOKEN: ${{ secrets['CHARTS_REPO_TOKEN'] }}
         run: |
           set -euo pipefail
-          IMAGE_TAG="${{ steps.version.outputs.version }}"
+          export IMAGE_TAG="${{ steps.version.outputs.version }}"
           if [[ -z "${CHARTS_TOKEN:-}" ]]; then
             echo "CHARTS_REPO_TOKEN missing; skipping chart dispatch."
             exit 0
           fi
-          echo "Dispatching chart packaging for tag ${IMAGE_TAG}"
-          payload=$(cat <<EOF
-          {"event_type":"package-chart","client_payload":{"chart":"fhg-backend-chart","imageTag":"${IMAGE_TAG}"}}
-          EOF
+          branch="${GITHUB_REF#refs/heads/}"
+          commit_message="$(git log -1 --pretty=%s)"
+          source_repo="${{ github.repository }}"
+          source_commit="${GITHUB_SHA}"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          source_actor="${{ github.actor }}"
+
+          export SOURCE_BRANCH="${branch}"
+          export SOURCE_REPO="${source_repo}"
+          export SOURCE_COMMIT="${source_commit}"
+          export COMMIT_MESSAGE="${commit_message}"
+          export SOURCE_ACTOR="${source_actor}"
+          export SOURCE_RUN_URL="${run_url}"
+
+          echo "Dispatching chart packaging for tag ${IMAGE_TAG} from ${source_repo}@${branch}"
+          payload=$(python - <<'PY'
+import json, os
+
+payload = {
+    "event_type": "package-chart",
+    "client_payload": {
+        "chart": "fhg-backend-chart",
+        "imageTag": os.environ["IMAGE_TAG"],
+        "sourceRepo": os.environ["SOURCE_REPO"],
+        "sourceBranch": os.environ["SOURCE_BRANCH"],
+        "sourceCommit": os.environ["SOURCE_COMMIT"],
+        "commitMessage": os.environ["COMMIT_MESSAGE"],
+        "sourceActor": os.environ["SOURCE_ACTOR"],
+        "sourceRunUrl": os.environ["SOURCE_RUN_URL"],
+    },
+}
+
+print(json.dumps(payload))
+PY
           )
           echo "::notice ::Payload: ${payload}"
           status=$(curl -s -o /tmp/dispatch.out -w "%{http_code}" -X POST \
