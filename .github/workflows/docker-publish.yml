@@ -139,24 +139,24 @@ jobs:
 
           echo "Dispatching chart packaging for tag ${IMAGE_TAG} from ${source_repo}@${branch}"
           payload=$(python - <<'PY'
-import json, os
+          import json, os
 
-payload = {
-    "event_type": "package-chart",
-    "client_payload": {
-        "chart": "fhg-backend-chart",
-        "imageTag": os.environ["IMAGE_TAG"],
-        "sourceRepo": os.environ["SOURCE_REPO"],
-        "sourceBranch": os.environ["SOURCE_BRANCH"],
-        "sourceCommit": os.environ["SOURCE_COMMIT"],
-        "commitMessage": os.environ["COMMIT_MESSAGE"],
-        "sourceActor": os.environ["SOURCE_ACTOR"],
-        "sourceRunUrl": os.environ["SOURCE_RUN_URL"],
-    },
-}
+          payload = {
+              "event_type": "package-chart",
+              "client_payload": {
+                  "chart": "fhg-backend-chart",
+                  "imageTag": os.environ["IMAGE_TAG"],
+                  "sourceRepo": os.environ["SOURCE_REPO"],
+                  "sourceBranch": os.environ["SOURCE_BRANCH"],
+                  "sourceCommit": os.environ["SOURCE_COMMIT"],
+                  "commitMessage": os.environ["COMMIT_MESSAGE"],
+                  "sourceActor": os.environ["SOURCE_ACTOR"],
+                  "sourceRunUrl": os.environ["SOURCE_RUN_URL"],
+              },
+          }
 
-print(json.dumps(payload))
-PY
+          print(json.dumps(payload))
+          PY
           )
           echo "::notice ::Payload: ${payload}"
           status=$(curl -s -o /tmp/dispatch.out -w "%{http_code}" -X POST \
